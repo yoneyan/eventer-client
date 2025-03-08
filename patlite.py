@@ -9,27 +9,31 @@ class Patlite:
         self.port = port
 
     def send(self, command):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.ip, self.port))
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(1)
+            s.connect((self.ip, self.port))
 
-        print("Connected!!!!!")
+            print("Connected!!!!!")
 
-        data = base_patlite_data + command
-        # まとめて送信
-        s.sendall(data)
-        # receive = s.recv(4096).decode()
-        # print(receive + "\n")
-        # while True:
-        #     print("<メッセージを入力してください>")
-        #     message = input('>>>')
-        #     if not message:
-        #         s.send("quit".encode("utf-8"))
-        #         break
-        #     receive = s.recv(4096).decode()
-        #     print(receive + "\n")
+            data = base_patlite_data + command
+            # まとめて送信
+            s.sendall(data)
+            # receive = s.recv(4096).decode()
+            # print(receive + "\n")
+            # while True:
+            #     print("<メッセージを入力してください>")
+            #     message = input('>>>')
+            #     if not message:
+            #         s.send("quit".encode("utf-8"))
+            #         break
+            #     receive = s.recv(4096).decode()
+            #     print(receive + "\n")
 
-        s.close()
-        print("END")
+            s.close()
+            print("END")
+        except:
+            print(f"Error: send patlite error({self.ip}:{self.port})")
 
     def red_light(self):
         self.send(b'\x01\x09\x09\x09\x09\x09')
