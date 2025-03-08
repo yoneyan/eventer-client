@@ -4,6 +4,7 @@ from pathlib import Path
 from time import sleep
 
 import serial
+import re
 
 from patlite import Patlite
 
@@ -12,7 +13,17 @@ dev_lists = []
 max_length = 10
 save_name = "./serial_data"
 data_type = "int"
-pattlites = [{"ip": "192.168.10.1", "port": 10000}]
+patlites = [
+    {"id": 1, "ip": "192.168.10.1", "port": 10000},
+    {"id": 2, "ip": "192.168.10.2", "port": 10000},
+    {"id": 3, "ip": "192.168.10.3", "port": 10000},
+    {"id": 4, "ip": "192.168.10.4", "port": 10000},
+    {"id": 5, "ip": "192.168.10.5", "port": 10000},
+]
+
+
+def extract_number(text):
+    return int(''.join(filter(str.isdigit, text)))
 
 
 def save_data(path, str_data):
@@ -41,7 +52,8 @@ def convert_to_str(binary_data):
 
 
 def save_per_serial(serial_port, str_data):
-    path = f"{serial_port.split("/")[2]}.txt"
+    serial_port_name = serial_port.split("/")[2]
+    path = f"{serial_port_name}.txt"
     save_data(path, str_data)
 
 
@@ -51,9 +63,16 @@ def save_per_all(str_data):
 
 
 def search_patlite(serial_port):
-    for patlite in pattlites:
+    for patlite in patlites:
         if patlite["serial"] == serial_port:
             return patlite
+    return None
+
+
+def search_patlite_by_id(id):
+    for idx, obj in enumerate(patlites):
+        if obj["id"] == int(id):
+            return {"index": idx, "patlite": obj}
     return None
 
 
@@ -70,42 +89,73 @@ class SerialReaderThreading(threading.Thread):
         while True:
             readSerial = serial.Serial(self.serial_port, 9600, timeout=1)
             c = readSerial.read(max_length)
-            print(f"Read Serial({self.serial_port}): {c}")
             if len(c) > 0:
                 patlite_info = search_patlite(self.serial_port)
-                print(patlite_info)
                 pat = None
                 if patlite_info:
                     pat = Patlite(patlite_info["ip"], patlite_info["port"])
                 while True:
                     try:
-                        if pat:
-                            pat.green_light()
-                            pat.buzzer(pattern=4)
                         str_data = convert_to_str(c)
-                        save_per_serial(serial_port=self.serial_port, str_data=str_data)
-                        save_per_all(str_data=str_data)
-                        sleep(1)
-                        if pat:
-                            pat.all_reset()
-                        break
+                        match str_data:
+                            case "test":
+                                print("test mode")
+                                print(f"test> {self.serial_port}")
+                                if pat:
+                                    pat.green_light()
+                                    pat.warning_light()
+                                    pat.red_light()
+                                    pat.buzzer()
+                                    sleep(2)
+                                    pat.all_reset()
+                                    break
+                            case a if re.search("setup\d+", a) is not None:
+                                print("setup mode")
+                                # patlite関数の配列番号
+                                sp = search_patlite_by_id(extract_number(str_data))
+                                print(sp)
+                                if sp:
+                                    idx = sp['index']
+                                    patlites[idx]["serial"] = f"{self.serial_port}"
+                                    print(
+                                        f"Setup Success> Patlite: [{patlites[idx]['id']}]{patlites[idx]['ip']}:{patlites[idx]['port']} -> Serial: {self.serial_port}")
+                                break
+                            case "debug":
+                                print("debug mode")
+                                print(f"debug> {self.serial_port}")
+                                for obj in patlites:
+                                    print(f"debug> Patlite: [{obj['id']}]{obj['ip']}:{obj['port']} -> Serial: {obj['serial']}")
+                                break
+                            case _:
+                                print(f"input> {self.serial_port}: {str_data}")
+                                print(patlite_info["ip"], patlite_info["port"])
+                                if pat:
+                                    pat.green_light()
+                                    pat.buzzer(pattern=4)
+                                save_per_serial(serial_port=self.serial_port, str_data=str_data)
+                                save_per_all(str_data=str_data)
+                                sleep(1)
+                                if pat:
+                                    pat.all_reset()
+                                break
                     except Exception as e:
                         if pat:
                             pat.red_light()
                             pat.buzzer(pattern=1)
                         print(f"Error: {e}")
+                        break
             # # readSerial.close()
 
 
 # Get usb serial devices in the /dev directory
 for f in os.listdir(dev_path):
-    if "tty.usbserial" in f:
-        dev_lists.append(f)
-print(dev_lists)
+    for text in ["tty.usbserial", "ttyUSB", "ttyACM"]:
+        if text in f:
+            dev_lists.append(f)
 
-for dev_list in dev_lists:
-    for idx, obj in enumerate(pattlites):
-        pattlites[idx]["serial"] = f"{dev_path}/{dev_list}"
+for idx, obj in enumerate(patlites):
+    dev_list = dev_lists.pop()
+    patlites[idx]["serial"] = f"{dev_path}/{dev_list}"
+    print(f"Patlite: [{obj['id']}]{obj['ip']}:{obj['port']} -> Serial: {dev_list}")
     t = SerialReaderThreading(dev_list, f"{dev_path}/{dev_list}")
     t.start()
-    # t.join()
