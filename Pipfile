@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 pyserial = "*"
+paramiko = "*"
+scp = "*"
 
 [dev-packages]
 
