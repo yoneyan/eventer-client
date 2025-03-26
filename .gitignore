@@ -4,3 +4,4 @@ tty*.txt
 __pycache__
 id_ed25519*
 venv
+*.csv
