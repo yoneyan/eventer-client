@@ -5,3 +5,4 @@ __pycache__
 id_ed25519*
 venv
 *.csv
+*.json

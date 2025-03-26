@@ -1,4 +1,7 @@
+import json
+
 import paramiko
+import requests
 import scp
 import sys
 
@@ -15,7 +18,7 @@ user = "yonedayuto"
 key = "/Users/y-yoneda/.ssh/all-hands"
 local_path = "/Users/y-yoneda/github/eventer-client/serial_data.csv"
 remote_path = "/opt/eventer-client/serial_data.csv"
-print(len(args))
+
 if len(args) > 1:
     host = args[0]
 if len(args) == 3:
@@ -37,13 +40,14 @@ with paramiko.SSHClient() as sshc:
     sshc.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     sshc.connect(hostname=host, port=22, username=user, key_filename=key)
 
-    # SCPによるコピー処理
-    # with scp.SCPClient(sshc.get_transport()) as scpc:
-    #     scpc.get(remote_path=target_path, local_path=out_path)
     # リモートファイルを開いて内容を読み取る
     sftp = sshc.open_sftp()
     with sftp.open(remote_path, mode='r') as remote_file:
         contents = remote_file.read().decode('utf-8')  # または .readlines()
+
+    # 後処理
+    sftp.close()
+    sshc.close()
 
     print("ファイルの中身:")
     for content in contents.splitlines():
@@ -58,10 +62,20 @@ with paramiko.SSHClient() as sshc:
                 write_data.append(content)
 
     # リモートファイルに書き込む
-    print(write_data)
+    print("write_data", write_data)
     with open(local_path, mode='a') as f:
         f.write("\n".join(write_data))
-
-    # 後処理
-    sftp.close()
-    sshc.close()
+    data = []
+    with open(local_path, mode='r') as f:
+        json_data = {"data": f.read().splitlines(), "version": "v0.0.1"}
+    print(json_data)
+    try:
+        response = requests.post(
+            "http://192.168.190.180/data",
+            data=json_data,
+            headers={"Content-Type": "application/json"},
+            timeout=(3.0, 5.0)
+        )
+        print("Success: post data")
+    except:
+        print("Error: post data error")

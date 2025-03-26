@@ -1,5 +1,8 @@
+import json
 import os
+import sys
 import threading
+from datetime import datetime
 from pathlib import Path
 from time import sleep
 
@@ -8,6 +11,12 @@ import re
 
 from patlite import Patlite
 
+## args
+# 0: 機器名
+# 1: configファイルパス
+args = sys.argv
+
+device_name = "wheel"
 dev_path = "/dev"
 dev_lists = []
 max_length = 10
@@ -20,6 +29,19 @@ patlites = [
     {"id": 4, "ip": "192.168.10.4", "port": 10000},
     {"id": 5, "ip": "192.168.10.5", "port": 10000},
 ]
+serial_targets = ["tty.usbserial", "ttySerial", "ttyACM"]
+local_servers = []
+remote_servers = []
+
+if len(args) > 1:
+    device_name = args[0]
+
+if len(args) > 2:
+    device_name = args[1]
+    with open('config.json', 'r') as f:
+        data = json.load(f)
+        patlites = data['patlites']
+        serial_targets = data["serial_targets"]
 
 
 def extract_number(text):
@@ -29,18 +51,19 @@ def extract_number(text):
 def save_data(path, str_data):
     if Path(path).is_file():
         with open(path, "r") as f:
-            for line in f.readlines():
+            for lines in f.read().splitlines():
                 match data_type:
                     case "int":
-                        if int(str_data) == int(line):
+                        if int(str_data) == int(lines[1]):
                             print(f"Data already exists: {int(str_data)}")
                             return
                     case "str":
-                        if str_data in line:
+                        if str_data in lines[1]:
                             print(f"Data already exists: {str_data}")
                             return
     with open(path, "a") as f:
-        f.write(f"{str(str_data)}\n")
+        dt_now = datetime.now()
+        f.write(f"{dt_now.strftime('%Y%m%d%H%M%S')},{str(str_data)},{device_name}\n")
 
 
 def convert_to_str(binary_data):
@@ -53,12 +76,12 @@ def convert_to_str(binary_data):
 
 def save_per_serial(serial_port, str_data):
     serial_port_name = serial_port.split("/")[2]
-    path = f"{serial_port_name}.txt"
+    path = f"{serial_port_name}.csv"
     save_data(path, str_data)
 
 
 def save_per_all(str_data):
-    path = f"{save_name}.txt"
+    path = f"{save_name}.csv"
     save_data(path, str_data)
 
 
@@ -149,7 +172,7 @@ class SerialReaderThreading(threading.Thread):
 
 # Get usb serial devices in the /dev directory
 for f in os.listdir(dev_path):
-    for text in ["tty.usbserial", "ttyUSB", "ttyACM"]:
+    for text in serial_targets:
         if text in f:
             dev_lists.append(f)
 

@@ -14,8 +14,6 @@ class Patlite:
             s.settimeout(1)
             s.connect((self.ip, self.port))
 
-            print("Connected!!!!!")
-
             data = base_patlite_data + command
             # まとめて送信
             s.sendall(data)
@@ -31,7 +29,6 @@ class Patlite:
             #     print(receive + "\n")
 
             s.close()
-            print("END")
         except:
             print(f"Error: send patlite error({self.ip}:{self.port})")
 
