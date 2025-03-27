@@ -63,10 +63,9 @@ def save_data(path, str_data):
                         if str_data in line_split[1]:
                             print(f"Data already exists: {str_data}")
                             return
-        with open(path, "a") as f:
-            dt_now = datetime.now()
-            f.write(f"\n{dt_now.strftime('%Y%m%d%H%M%S')},{str(str_data)},{device_name}")
-
+    with open(path, "a") as f:
+        dt_now = datetime.now()
+        f.write(f"{dt_now.strftime('%Y%m%d%H%M%S')},{str(str_data)},{device_name}\n")
 
 def convert_to_str(binary_data):
     str_data = binary_data.decode("utf-8")
