@@ -20,7 +20,7 @@ local_path = "/Users/y-yoneda/github/eventer-client/serial_data.csv"
 remote_path = "/opt/eventer-client/serial_data.csv"
 
 if len(args) > 1:
-    host = args[0]
+    host = args[1]
 if len(args) == 3:
     local_path = args[2]
 

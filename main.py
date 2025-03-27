@@ -20,7 +20,7 @@ device_name = "wheel"
 dev_path = "/dev"
 dev_lists = []
 max_length = 10
-save_name = "./serial_data"
+save_path = "./serial_data"
 data_type = "int"
 patlites = [
     {"id": 1, "ip": "192.168.10.1", "port": 10000},
@@ -34,14 +34,13 @@ local_servers = []
 remote_servers = []
 
 if len(args) > 1:
-    device_name = args[0]
-
-if len(args) > 2:
-    device_name = args[1]
-    with open('config.json', 'r') as f:
+    config_path = args[1]
+    with open(config_path, 'r') as f:
         data = json.load(f)
         patlites = data['patlites']
         serial_targets = data["serial_targets"]
+        device_name = data["device_name"]
+        save_path = data["save_path"]
 
 
 def extract_number(text):
@@ -51,19 +50,22 @@ def extract_number(text):
 def save_data(path, str_data):
     if Path(path).is_file():
         with open(path, "r") as f:
-            for lines in f.read().splitlines():
+            for line in f.read().splitlines():
+                line_split = line.split(",")
+                if len(line_split) < 3:
+                    continue
                 match data_type:
                     case "int":
-                        if int(str_data) == int(lines[1]):
+                        if int(str_data) == int(line_split[1]):
                             print(f"Data already exists: {int(str_data)}")
                             return
                     case "str":
-                        if str_data in lines[1]:
+                        if str_data in line_split[1]:
                             print(f"Data already exists: {str_data}")
                             return
-    with open(path, "a") as f:
-        dt_now = datetime.now()
-        f.write(f"{dt_now.strftime('%Y%m%d%H%M%S')},{str(str_data)},{device_name}\n")
+        with open(path, "a") as f:
+            dt_now = datetime.now()
+            f.write(f"\n{dt_now.strftime('%Y%m%d%H%M%S')},{str(str_data)},{device_name}")
 
 
 def convert_to_str(binary_data):
@@ -81,7 +83,7 @@ def save_per_serial(serial_port, str_data):
 
 
 def save_per_all(str_data):
-    path = f"{save_name}.csv"
+    path = f"{save_path}"
     save_data(path, str_data)
 
 
