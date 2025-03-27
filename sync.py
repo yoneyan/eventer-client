@@ -15,9 +15,9 @@ args = sys.argv
 # サーバへのログイン情報
 host = "192.168.161.18"
 user = "yonedayuto"
-key = "/Users/y-yoneda/.ssh/all-hands"
-local_path = "/Users/y-yoneda/github/eventer-client/serial_data.csv"
-remote_path = "/opt/eventer-client/serial_data.csv"
+key = "/home/yonedayuto/.ssh/id_rsa"
+local_path = "/home/yonedayuto/serial_data.csv"
+remote_path = "/home/yonedayuto/serial_data.csv"
 
 if len(args) > 1:
     host = args[1]
