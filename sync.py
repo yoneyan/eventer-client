@@ -71,7 +71,7 @@ with paramiko.SSHClient() as sshc:
     print(json_data)
     try:
         response = requests.post(
-            "http://192.168.190.180/data",
+            "http://192.168.190.180:8000/data",
             data=json_data,
             headers={"Content-Type": "application/json"},
             timeout=(3.0, 5.0)
