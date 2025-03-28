@@ -65,6 +65,7 @@ with paramiko.SSHClient() as sshc:
     print("write_data", write_data)
     with open(local_path, mode='a') as f:
         f.write("\n".join(write_data))
+        f.write("\n")
     data = []
     with open(local_path, mode='r') as f:
         json_data = {"data": f.read().splitlines(), "version": "v0.0.1"}
